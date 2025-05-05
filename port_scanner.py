@@ -1,4 +1,6 @@
+#! usr/bin/env python
 
+from scapy.all import *
 from concurrent.futures import ThreadPoolExecutor
 import socket
 import ipaddress
@@ -25,6 +27,15 @@ def handle_hostname(target: str):
 
 # Port Scanning
 
+def connect_scan():
+    pass
+
+def syn_scan():
+    pass
+
+def udp_scan():
+    pass
+
 
 def main():
     # General Set up
@@ -33,3 +44,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
