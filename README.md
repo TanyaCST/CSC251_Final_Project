@@ -1,1 +1,1 @@
-# CSC251_FInal_Project
+# CSC251_Final_Project
