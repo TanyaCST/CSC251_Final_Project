@@ -6,7 +6,6 @@ import socket
 import ipaddress
 
 # Check target
-# If target is a hostname -> convert it to IP
 
 def handle_hostname(target: str):
     # Reference: https://stackoverflow.com/questions/36138209/python-socket-gethostname
@@ -16,21 +15,29 @@ def handle_hostname(target: str):
         # If target is a IP -> return the IP
         ipaddress.ip_address(target)
         return target
+    
     except ValueError:
         # If target is a hostname -> convert it to IP and return the IP
-        host_to_ip = socket.gethostbyname(target)
-        return host_to_ip
-    
-
-# Check if IP is reachable
-# Send a ping to the IP addr -> How to send a ping
+        try:
+            host_to_ip = socket.gethostbyname(target)
+            return host_to_ip
+        
+        except ValueError:
+            return "Invalid Hostname"
 
 # Port Scanning
 
-def connect_scan():
+def connect_scan(target_ip, port):
+    # Make full connection to each OPEN port
+    # If connection is established -> Port open
+    # If connection fails -> Port closed
     pass
 
-def syn_scan():
+# The list of ports will be all ports or well-known ports from argparse
+def syn_scan(target_ip, ports):
+    # No full connection
+    # Send a SYN request and waiting for response
+    # If response == SYN/ACK -> port open
     pass
 
 def udp_scan():
@@ -38,9 +45,8 @@ def udp_scan():
 
 
 def main():
-    # General Set up
-    target = input("What is your target?")
-    print(handle_hostname(target))
+    target = "glasgow.smith.edu"
+    
 
 if __name__ == "__main__":
     main()
