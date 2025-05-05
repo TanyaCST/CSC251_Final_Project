@@ -4,6 +4,9 @@ from scapy.all import *
 from concurrent.futures import ThreadPoolExecutor
 import socket
 import ipaddress
+# import arguments
+import sys
+import argparse
 
 # Check target
 
@@ -18,6 +21,7 @@ def handle_hostname(target: str):
     
     except ValueError:
         # If target is a hostname -> convert it to IP and return the IP
+
         try:
             host_to_ip = socket.gethostbyname(target)
             return host_to_ip
@@ -45,8 +49,30 @@ def udp_scan():
 
 
 def main():
-    target = "glasgow.smith.edu"
+    # Reference: https://www.geeksforgeeks.org/command-line-arguments-in-python/ 
+    # General Set up
+
+    parser = argparse.ArgumentParser(description="TCP port scanner")
+    parser.add_argument("hostname", help="The name of the file to process")
+    args = parser.parse_args()
+
+    print(args.hostname)
     
+    # target = "glasgow.smith.edu"
+    target = args.hostname
+    host_ip = handle_hostname(target)
+    print(host_ip)
+
+    ans, unans = sr(IP(dst=host_ip)/ICMP())
+    print(ans)
+    print(unans)
+
+    if len(ans) !=1:
+        pass
+    else:
+        print("Target unreachable")
+        return
+
 
 if __name__ == "__main__":
     main()
