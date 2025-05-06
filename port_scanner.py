@@ -91,13 +91,13 @@ def main():
     # General Set up
 
     parser = argparse.ArgumentParser(description="TCP port scanner")
-    parser.add_argument("hostname", help="The name of the file to process")
+    parser.add_argument("-mode", help="Scan hosts using TCP-connect scan, TCP-SYN scan, or UDP scan", choices=["connect", "syn", "udp"], required=True)
+    parser.add_argument("-order", help="Scan ports in default sequential or random order", choices=["order, random"], default="order")
+    parser.add_argument("-ports", help="Scan default known ports or all ports", choices=["all, known"], default="known")
+    parser.add_argument("hostname", help="The host to scan")
     args = parser.parse_args()
 
     # Add Options
-    parser.add_argument("-mode", choices=["connect", "syn", "udp"], required=True)
-    parser.add_argument("-order", choices=["order, random"], default="order")
-    parser.add_argument("-ports", choices=["all, known"], default="all")
 
     print(args.hostname)
     
@@ -131,7 +131,8 @@ def main():
 
     udp_scan(host_ip, 80)
     udp_scan(host_ip, 123)
-    connect_scan(host_ip, 80)
+    if args.mode == "connect":
+        connect_scan(host_ip, 80)
     print()
     # print(syn_scan(host_ip, 80))
     #ans = sr1(IP(dst = host_ip)/TCP(flags="S", dport=80))
