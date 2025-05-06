@@ -35,13 +35,13 @@ def connect_scan(target_ip, port):
     # Make full connection to each OPEN port
     # If connection is established -> Port open
     # If connection fails -> Port closed
-    ans, unans = sr(IP(dst = target_ip)/TCP(flags="S", dport=port))
+    ans, unans = sr(IP(dst = target_ip)/TCP(flags="S", dport=port), verbose=False)
 
     for sent, receive in ans:
         if receive.haslayer(TCP) and receive[TCP].flags == 0x12:
             # Send back a ACK response
             ack = IP(dst = target_ip)/TCP(flags="A", dport=port)
-            send(ack)
+            send(ack, verbose=False)
 
             print(".", end="")
             return port
@@ -57,13 +57,13 @@ def syn_scan(target_ip, port):
     # If response == SYN/ACK -> port open
 
     # Reference: https://scapy.readthedocs.io/en/latest/usage.html#tcp-port-scanning
-    ans, unans = sr(IP(dst = target_ip)/TCP(flags="S", dport=port))
+    ans, unans = sr(IP(dst = target_ip)/TCP(flags="S", dport=port), verbose=False)
 
     for sent, receive in ans:
         if receive.haslayer(TCP) and receive[TCP].flags == 0x12:
             # Send back a RST response
             rst = IP(dst = target_ip)/TCP(flags="R", dport=port)
-            send(rst)
+            send(rst, verbose=False)
 
             print(".", end="")
             return port
@@ -74,11 +74,13 @@ def syn_scan(target_ip, port):
 
 def udp_scan(target_ip, port):
     
-    ans = sr1(IP(dst=target_ip)/UDP(sport= port, dport=port), timeout=0.1)
+    ans = sr1(IP(dst=target_ip)/UDP(sport= port, dport=port), timeout=0.1, verbose=False)
     
     if ans is None:
+        print(".", end="")
         return port
     elif ans.haslayer(ICMP):
+        print(".", end="")
         return "Closed"
 
 
@@ -102,14 +104,14 @@ def main():
     # target = "glasgow.smith.edu"
     target = args.hostname
     host_ip = handle_hostname(target)
-    print(host_ip)
+    # print(host_ip)
 
-    ans = sr1(IP(dst=host_ip)/ICMP())
-    print(ans)
+    ans = sr1(IP(dst=host_ip)/ICMP(), verbose=False)
+    # print(ans)
     # print(unans)
 
 
-    ans.summary()
+    # ans.summary()
 
     if len(ans) !=0:
         pass
@@ -122,14 +124,16 @@ def main():
     # ans = sr1( IP(dst=host_ip)/UDP(dport=123) )
     # print(ans)
 
-    print(udp_scan(host_ip, 80))
+    # print(udp_scan(host_ip, 80))
     # ans = sr1(IP(dst=host_ip)/UDP(dport=80), timeout=1)
     # print(ans)
-    print(udp_scan(host_ip, 123))
+    # print(udp_scan(host_ip, 123))
 
-
-    #connect_scan(host_ip, 80)
-    print(syn_scan(host_ip, 80))
+    udp_scan(host_ip, 80)
+    udp_scan(host_ip, 123)
+    connect_scan(host_ip, 80)
+    print()
+    # print(syn_scan(host_ip, 80))
     #ans = sr1(IP(dst = host_ip)/TCP(flags="S", dport=80))
     #print(ans)
 
