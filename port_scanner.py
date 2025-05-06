@@ -38,14 +38,22 @@ def connect_scan(target_ip, port):
     pass
 
 # The list of ports will be all ports or well-known ports from argparse
-def syn_scan(target_ip, ports):
+def syn_scan(target_ip, port):
     # No full connection
     # Send a SYN request and waiting for response
     # If response == SYN/ACK -> port open
     pass
 
-def udp_scan():
-    pass
+def udp_scan(target_ip, port):
+    
+    ans = sr1(IP(dst=target_ip)/UDP(sport= port, dport=port), timeout=0.1)
+    
+    if ans is None:
+        return port
+    elif ans.haslayer(ICMP):
+        return "Closed"
+
+
 
 
 def main():
@@ -63,15 +71,27 @@ def main():
     host_ip = handle_hostname(target)
     print(host_ip)
 
-    ans, unans = sr(IP(dst=host_ip)/ICMP())
+    ans = sr1(IP(dst=host_ip)/ICMP())
     print(ans)
-    print(unans)
+    # print(unans)
 
-    if len(ans) !=1:
+    ans.summary()
+
+    if len(ans) !=0:
         pass
     else:
         print("Target unreachable")
         return
+    
+    # udp_scan(host_ip, 0)
+    # ans = sr1( IP(dst=host_ip)/UDP(dport=123) )
+    # print(ans)
+
+    print(udp_scan(host_ip, 80))
+    # ans = sr1(IP(dst=host_ip)/UDP(dport=80), timeout=1)
+    # print(ans)
+    print(udp_scan(host_ip, 123))
+
 
 
 if __name__ == "__main__":
