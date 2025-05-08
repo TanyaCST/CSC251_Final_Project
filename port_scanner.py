@@ -82,13 +82,24 @@ def syn_scan(target_ip, port):
         print(".", end="")
         return  
 
-
+# check for closed ports with udp scan
 def udp_scan(target_ip, port):
     
     ans = sr1(IP(dst=target_ip)/UDP(dport=port), timeout=1, verbose=False)
-    print(ans)
+    # print(ans)
 
-            
+    if ans != None:
+        if ans.haslayer(UDP):
+            print(".", end="")
+            return 
+        # If port is closed, ie. sends back an ICMP error, return port. 
+        elif ans.haslayer(ICMP):
+            print(".", end="")
+            return port
+    else:
+        print(".", end="")
+        return 
+
 
 
 
@@ -98,26 +109,25 @@ def main():
 
     parser = argparse.ArgumentParser(description="TCP port scanner")
     parser.add_argument("-mode", help="Scan hosts using TCP-connect scan, TCP-SYN scan, or UDP scan", choices=["connect", "syn", "udp"], required=True)
-    parser.add_argument("-order", help="Scan ports in default sequential or random order", choices=["order, random"], default="order")
-    parser.add_argument("-ports", help="Scan default known ports or all ports", choices=["all, known"], default="known")
+    parser.add_argument("-order", help="Scan ports in default sequential or random order", choices=["order", "random"], default="order")
+    parser.add_argument("-ports", help="Scan default known ports or all ports", choices=["all", "known"], default="known")
     parser.add_argument("hostname", help="The host to scan")
     args = parser.parse_args()
 
-    # Add Options
+    port_list = []
+
+    if args.ports == "all":
+        port_list = list(range(0,65536))
+    else:
+        port_list = list(range(0,1024))
 
     print(args.hostname)
     
     # target = "glasgow.smith.edu"
     target = args.hostname
     host_ip = handle_hostname(target)
-    print(host_ip)
-
+    # print(host_ip)
     ans = sr1(IP(dst=host_ip)/ICMP(), verbose=False)
-    # print(ans)
-    # print(unans)
-
-
-    # ans.summary()
 
     if len(ans) !=0:
         pass
@@ -125,41 +135,44 @@ def main():
         print("Target unreachable")
         return
 
+    #values = [8443, 21, 22, 53, 80, 443, 8000]
+    open_ports = []
+    closed_ports = []
 
-    values = [8443, 21, 22, 53, 80, 443, 8000]
-    open = []
-    closed = []
-
+    if args.order == "random":
+        random.shuffle(port_list)
 
     if args.mode == "connect":
-        with ThreadPoolExecutor(max_workers=len(values)) as exe:
-            results = list(exe.map(connect_scan, itertools.repeat(host_ip), values))
+        with ThreadPoolExecutor(max_workers=len(port_list)) as exe:
+            results = list(exe.map(connect_scan, itertools.repeat(host_ip), port_list))
 
-            # print(results)
-            
             for result in results:
                 if result != None:
-                    open.append(result)
-            
+                    open_ports.append(result)
+
+        print(open_ports)
         print()
     elif args.mode == "syn":
-        with ThreadPoolExecutor(max_workers=len(values)) as exe:
-            results = list(exe.map(syn_scan, itertools.repeat(host_ip), values))
+        with ThreadPoolExecutor(max_workers=len(port_list)) as exe:
+            results = list(exe.map(syn_scan, itertools.repeat(host_ip), port_list))
+
             for result in results:
-                    if result != None:
-                        open.append(result)
+                if result != None:
+                    open_ports.append(result)
+                    
+        print(open_ports)
         print()
     else:
-        with ThreadPoolExecutor(max_workers=len(values)) as exe:
-            results = list(exe.map(udp_scan, itertools.repeat(host_ip), values))
+        with ThreadPoolExecutor(max_workers=len(port_list)) as exe:
+            results = list(exe.map(udp_scan, itertools.repeat(host_ip), port_list))
 
             for result in results:
-                if result == None:
-                    closed.append(result)
-    
+                if result != None:
+                    closed_ports.append(result)
+
+        print(closed_ports)
         print()
 
-    print(open)
 
 
 
