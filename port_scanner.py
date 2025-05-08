@@ -47,16 +47,13 @@ def connect_scan(target_ip, port):
             ack = IP(dst = target_ip)/TCP(flags="A", dport=port)
             send(ack, verbose=False)
 
-            print(port)
             print(".", end="")
             return port
     
         else:
-            print(None)
             print(".", end="")
             return
     else:
-        print(port)
         print(".", end="")
         return 
 
@@ -75,38 +72,34 @@ def syn_scan(target_ip, port):
             rst = IP(dst = target_ip)/TCP(flags="R", dport=port)
             send(rst, verbose=False)
 
-            print(port)
             print(".", end="")
             return port
     
         else:
-            print(None)
             print(".", end="")
-            return
-
+            return  
     else:
-        print(None)
         print(".", end="")
-        return
+        return  
 
+# check for closed ports with udp scan
 def udp_scan(target_ip, port):
     
     ans = sr1(IP(dst=target_ip)/UDP(dport=port), timeout=1, verbose=False)
-    print(ans)
+    # print(ans)
 
     if ans != None:
         if ans.haslayer(UDP):
-            print(port)
             print(".", end="")
             return 
+        # If port is closed, ie. sends back an ICMP error, return port. 
         elif ans.haslayer(ICMP):
-            print(None)
             print(".", end="")
             return port
     else:
-        print(port)
         print(".", end="")
         return 
+
 
 
 
@@ -133,14 +126,8 @@ def main():
     # target = "glasgow.smith.edu"
     target = args.hostname
     host_ip = handle_hostname(target)
-    print(host_ip)
-
+    # print(host_ip)
     ans = sr1(IP(dst=host_ip)/ICMP(), verbose=False)
-    # print(ans)
-    # print(unans)
-
-
-    # ans.summary()
 
     if len(ans) !=0:
         pass
@@ -149,24 +136,8 @@ def main():
         return
 
     #values = [8443, 21, 22, 53, 80, 443, 8000]
-    open = []
-    closed = []
-    # host_list = host_ip*len(values)
-    # print(host_list)
-
-    # ans = sr1(IP(dst=host_ip)/UDP(dport=8443), timeout=1)
-    # ans2 = sr1(IP(dst=host_ip)/UDP(dport=8000), timeout=1)
-    # udp_scan(host_ip, 8443)
-    # udp_scan(host_ip, 8000)
-
-    # # ans.summary()
-
-    # print(ans)
-    # print(ans2)
-
-    
-    # Test
-    #port_list = values
+    open_ports = []
+    closed_ports = []
 
     if args.order == "random":
         random.shuffle(port_list)
@@ -177,9 +148,9 @@ def main():
 
             for result in results:
                 if result != None:
-                    open.append(result)
+                    open_ports.append(result)
 
-        print(open)
+        print(open_ports)
         print()
     elif args.mode == "syn":
         with ThreadPoolExecutor(max_workers=len(port_list)) as exe:
@@ -187,9 +158,9 @@ def main():
 
             for result in results:
                 if result != None:
-                    open.append(result)
+                    open_ports.append(result)
                     
-        print(open)
+        print(open_ports)
         print()
     else:
         with ThreadPoolExecutor(max_workers=len(port_list)) as exe:
@@ -197,9 +168,9 @@ def main():
 
             for result in results:
                 if result != None:
-                    closed.append(result)
+                    closed_ports.append(result)
 
-        print(closed)
+        print(closed_ports)
         print()
 
 
