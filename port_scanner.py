@@ -179,12 +179,24 @@ def main():
     # socket resolve server from port 
     print(f"Starting port scan \t \t at {time.ctime(start_time)}")
     print(f"Interesting ports on {host_ip}:")
-    print(f"Not shown: {len(closed_ports)} closed ports")
+
+    port_mode = "tcp"
+    if args.mode == "udp":
+        port_mode = "udp"
+        print(f"Not shown: {len(port_list) - len(closed_ports)} open|filtered ports")
+    else:
+        print(f"Not shown: {len(port_list) - len(open_ports)} closed ports")
+
     print(f"PORT \t STATE \t SERVICE")
 
-    
-    for port in open_ports:
-        print(port)
+
+    if open_ports:
+        for port in open_ports:
+            service = socket.getservbyport(port)
+            print(f"{port}/{port_mode} \t open \t {service}")
+    else:
+        for port in closed_ports:
+            print(f"{port}/{port_mode} \t closed \t {service}")
 
     print(f"scan done! 1 IP adress (1 host up) scanned in {end_time - start_time} seconds")
 
