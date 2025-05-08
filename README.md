@@ -1,19 +1,29 @@
-# CSC251_Final_Project
+# CSC251 Final Project: TCP Port Scanner
 
-TO DO:
+## Files included
+1. README.md
+2. port_scanner.py
 
-convert hostname to IP/continue if IP otherwise error
+## Instructions: How to run this project
+1. Open your terminal
+2. Enter python3 port_scanner.py [-options] target
+3. The target can be an IP address or a host name.
+4. [-options] includes: 
+   a. - mode [connect/syn/udp]: **Required argument** To scan hosts using TCP-connect scan, TCP-SYN scan, or UDP scan.
+   b. - order [order/random]: **Optional argument** To scan ports in default sequential or random order.
+   c. - ports [all/known]: **Optional argument** To scan default known ports or all ports.
 
-send ping to target
 
-TCP scan: full connection, capture any initial info sent back
+## Example output
+### TCP-Connect Scan
 
-SYN scan: send syn, end connection if host responds syn ack
+### TCP-SYN Scan
 
-UDP scan: send UDP packet to each port, is ICMP error message- closed 
+### UDP Scan
 
-scan in order/scan random 
+## Discussion
+### The significant challenge we faced and how you solved it
+Tanya: From my perspective, the most significant challenge for this project is to implement the scanning functions that generate corresponding open ports. While implement scanning functions, sometimes a TCP scanning method consider a UDP port open while it should be closed and vice versa. What we did was searching for the port number online to check whether it is a TCP port, a UDP port, or both. Then, we review our code for corresponding function and debug.
 
-scan all/scan well known
-
-dots 
+### Describe each person's contributions to the project
+Tanya: We were working collaboratively in this project and it is difficult to specify our individual contributions. I wrote handle_hostname function, connect_scan function, and syn_scan function, modified udp_scan function a little bit, and combined all arguments together to return open ports. 
