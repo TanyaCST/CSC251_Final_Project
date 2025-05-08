@@ -47,16 +47,13 @@ def connect_scan(target_ip, port):
             ack = IP(dst = target_ip)/TCP(flags="A", dport=port)
             send(ack, verbose=False)
 
-            print(port)
             print(".", end="")
             return port
     
         else:
-            print(port)
             print(".", end="")
             return
     else:
-        print(port)
         print(".", end="")
         return 
 
@@ -67,60 +64,31 @@ def syn_scan(target_ip, port):
     # If response == SYN/ACK -> port open
 
     # Reference: https://scapy.readthedocs.io/en/latest/usage.html#tcp-port-scanning
-    ans, unans = sr(IP(dst = target_ip)/TCP(flags="S", dport=port), verbose=False)
+    ans = sr1(IP(dst = target_ip)/TCP(flags="S", dport=port), timeout=1, verbose=False)
 
-    for sent, receive in ans:
-        if receive.haslayer(TCP) and receive[TCP].flags == 0x12:
+    if ans != None:
+        if ans.haslayer(TCP) and ans[TCP].flags == 0x12:
             # Send back a RST response
             rst = IP(dst = target_ip)/TCP(flags="R", dport=port)
             send(rst, verbose=False)
 
-            print(port)
             print(".", end="")
             return port
     
         else:
-            print(None)
             print(".", end="")
-            return     
+            return  
+    else:
+        print(".", end="")
+        return  
+
 
 def udp_scan(target_ip, port):
     
     ans = sr1(IP(dst=target_ip)/UDP(dport=port), timeout=1, verbose=False)
     print(ans)
 
-    if ans is None:
-        print(".", end="")
-        return port
-    elif ans.haslayer(ICMP):
-        print(".", end="")
-        return
-    else:
-        print(".", end="")
-        return
-    
-    # if ans != None:
-    #     if ans.haslayer(ICMP):
-    #         print("Not none")
-    #         print(".", end="")
-    #         return
-    # # elif ans == None:
-    # #     print(port)
-    # #     print(".", end="")
-    # #     return port
-    
-    #     # if ans.haslayer(UDP):
-    #     #     print(port)
-    #     #     print(".", end="")
-    #     #     return port
-    # else:
-    #     print(port)
-    #     print(".", end="")
-    #     return port
-
-
-        
-
+            
 
 
 
@@ -160,39 +128,35 @@ def main():
 
     values = [8443, 21, 22, 53, 80, 443, 8000]
     open = []
-    # host_list = host_ip*len(values)
-    # print(host_list)
-
-    ans = sr1(IP(dst=host_ip)/UDP(dport=8443), timeout=1)
-    ans2 = sr1(IP(dst=host_ip)/UDP(dport=8000), timeout=1)
-    udp_scan(host_ip, 8443)
-    udp_scan(host_ip, 8000)
-
-    # ans.summary()
-
-    print(ans)
-    print(ans2)
-
-    
+    closed = []
 
 
     if args.mode == "connect":
         with ThreadPoolExecutor(max_workers=len(values)) as exe:
-            exe.map(connect_scan, itertools.repeat(host_ip), values)
+            results = list(exe.map(connect_scan, itertools.repeat(host_ip), values))
+
+            # print(results)
+            
+            for result in results:
+                if result != None:
+                    open.append(result)
+            
         print()
     elif args.mode == "syn":
         with ThreadPoolExecutor(max_workers=len(values)) as exe:
-            exe.map(syn_scan, itertools.repeat(host_ip), values)
+            results = list(exe.map(syn_scan, itertools.repeat(host_ip), values))
+            for result in results:
+                    if result != None:
+                        open.append(result)
         print()
     else:
         with ThreadPoolExecutor(max_workers=len(values)) as exe:
             results = list(exe.map(udp_scan, itertools.repeat(host_ip), values))
 
             for result in results:
-                if result != None:
-                    open.append(result)
-
-            
+                if result == None:
+                    closed.append(result)
+    
         print()
 
     print(open)
