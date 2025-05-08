@@ -9,7 +9,6 @@ import sys
 import argparse
 import time
 
-# Check target
 
 def handle_hostname(target: str):
     # Reference: https://stackoverflow.com/questions/36138209/python-socket-gethostname
@@ -36,25 +35,24 @@ def connect_scan(target_ip, port):
     # Make full connection to each OPEN port
     # If connection is established -> Port open
     # If connection fails -> Port closed
+    # Disable default output buffering: https://www.geeksforgeeks.org/how-to-disable-output-buffering-in-python/ 
 
-    # ans, unans = sr(IP(dst = target_ip)/TCP(flags="S", dport=port), timeout=1, verbose=False)
+    print(".", end="")
+    sys.stdout.flush()
+
     ans = sr1(IP(dst = target_ip)/TCP(flags="S", dport=port), timeout=1, verbose=False)
 
-    # for sent, receive in ans:
     if ans != None:
         if ans.haslayer(TCP) and ans[TCP].flags == 0x12:
             # Send back a ACK response
             ack = IP(dst = target_ip)/TCP(flags="A", dport=port)
             send(ack, verbose=False)
 
-            print(".", end="")
             return port
     
         else:
-            print(".", end="")
             return
     else:
-        print(".", end="")
         return 
 
 
@@ -62,11 +60,12 @@ def syn_scan(target_ip, port):
     # No full connection
     # Send a SYN request and waiting for response
     # If response == SYN/ACK -> port open
+    # Reference: https://scapy.readthedocs.io/en/latest/usage.html#tcp-port-scanning
 
     print(".", end="")
-    # Reference: https://scapy.readthedocs.io/en/latest/usage.html#tcp-port-scanning
-    ans = sr1(IP(dst = target_ip)/TCP(flags="S", dport=port), timeout=1, verbose=False)
+    sys.stdout.flush()
 
+    ans = sr1(IP(dst = target_ip)/TCP(flags="S", dport=port), timeout=1, verbose=False)
 
     if ans != None:
         if ans.haslayer(TCP) and ans[TCP].flags == 0x12:
@@ -83,20 +82,19 @@ def syn_scan(target_ip, port):
 # check for closed ports with udp scan
 def udp_scan(target_ip, port):
     print(".", end="")
+    sys.stdout.flush()
+
     
     ans = sr1(IP(dst=target_ip)/UDP(dport=port), timeout=1, verbose=False)
     # print(ans)
 
     if ans != None:
         if ans.haslayer(UDP):
-            print(".", end="")
             return 
         # If port is closed, ie. sends back an ICMP error, return port. 
         elif ans.haslayer(ICMP):
-            print(".", end="")
             return port
     else:
-        print(".", end="")
         return 
 
 
@@ -141,6 +139,7 @@ def main():
     open_ports = []
     closed_ports = []
 
+
     if args.mode == "connect":
         with ThreadPoolExecutor(max_workers=len(port_list)) as exe:
             results = list(exe.map(connect_scan, itertools.repeat(host_ip), port_list))
@@ -151,7 +150,7 @@ def main():
                     open_ports.append(result)
 
         print()
-        print(open_ports)
+
     elif args.mode == "syn":
         with ThreadPoolExecutor(max_workers=len(port_list)) as exe:
             results = list(exe.map(syn_scan, itertools.repeat(host_ip), port_list))
@@ -162,7 +161,7 @@ def main():
                     open_ports.append(result)
                     
         print()
-        print(open_ports)
+
     else:
         with ThreadPoolExecutor(max_workers=len(port_list)) as exe:
             results = list(exe.map(udp_scan, itertools.repeat(host_ip), port_list))
@@ -173,22 +172,49 @@ def main():
                     closed_ports.append(result)
 
         print()
-        print(closed_ports)
 
     
-    # socket resolve server from port 
     print(f"Starting port scan \t \t at {time.ctime(start_time)}")
     print(f"Interesting ports on {host_ip}:")
-    print(f"Not shown: {len(closed_ports)} closed ports")
+
+    port_mode = "tcp"
+    port_status = "open"
+    if args.mode == "udp":
+        port_mode = "udp"
+        port_status = "closed"
+        print(f"Not shown: {len(port_list) - len(closed_ports)} open ports")
+    else:
+        print(f"Not shown: {len(port_list) - len(open_ports)} closed ports")
+
     print(f"PORT \t STATE \t SERVICE")
 
+    if open_ports:
+        for port in open_ports:
+            service = socket.getservbyport(port)
+
+            if len(str(port)) == 3:
+                print(f"{port}/{port_mode}  {port_status} \t {service}")
+            elif len(str(port)) == 4:
+                print(f"{port}/{port_mode} {port_status} \t {service}")
+            elif len(str(port)) >= 5:
+                print(f"{port}/{port_mode}{port_status} \t {service}")
+            else:
+                print(f"{port}/{port_mode} \t {port_status} \t {service}")
+    else:
+        for port in closed_ports:
+            service = socket.getservbyport(port)
+
+            if len(str(port)) == 3:
+                print(f"{port}/{port_mode}  {port_status} \t {service}")
+            elif len(str(port)) == 4:
+                print(f"{port}/{port_mode} {port_status} \t {service}")
+            elif len(str(port)) >= 5:
+                print(f"{port}/{port_mode}{port_status} \t {service}")
+            else:
+                print(f"{port}/{port_mode} \t {port_status} \t {service}")
     
-    for port in open_ports:
-        print(port)
 
-    print(f"scan done! 1 IP adress (1 host up) scanned in {end_time - start_time} seconds")
-
-
+    print(f"scan done! 1 IP adress (1 host up) scanned in {(end_time - start_time):.2f} seconds")
 
 
 
