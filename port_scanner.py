@@ -63,27 +63,26 @@ def syn_scan(target_ip, port):
     # Send a SYN request and waiting for response
     # If response == SYN/ACK -> port open
 
+    print(".", end="")
     # Reference: https://scapy.readthedocs.io/en/latest/usage.html#tcp-port-scanning
     ans = sr1(IP(dst = target_ip)/TCP(flags="S", dport=port), timeout=1, verbose=False)
+
 
     if ans != None:
         if ans.haslayer(TCP) and ans[TCP].flags == 0x12:
             # Send back a RST response
             rst = IP(dst = target_ip)/TCP(flags="R", dport=port)
             send(rst, verbose=False)
-
-            print(".", end="")
             return port
     
         else:
-            print(".", end="")
             return  
     else:
-        print(".", end="")
         return  
 
 # check for closed ports with udp scan
 def udp_scan(target_ip, port):
+    print(".", end="")
     
     ans = sr1(IP(dst=target_ip)/UDP(dport=port), timeout=1, verbose=False)
     # print(ans)
@@ -116,62 +115,79 @@ def main():
 
     port_list = []
 
+    start_time = time.time()
+    end_time = 0
+    # print(f"Starting port scan \t \t at {time.ctime(start_time)}")
+
     if args.ports == "all":
         port_list = list(range(0,65536))
     else:
         port_list = list(range(0,1024))
 
-    print(args.hostname)
-    
-    # target = "glasgow.smith.edu"
+    if args.order == "random":
+        random.shuffle(port_list)
+
     target = args.hostname
     host_ip = handle_hostname(target)
-    # print(host_ip)
-    ans = sr1(IP(dst=host_ip)/ICMP(), verbose=False)
 
+    # Ping the target host with an ICMP packet, return and print Target unreachable if no response
+    ans = sr1(IP(dst=host_ip)/ICMP(), verbose=False)
     if len(ans) !=0:
         pass
     else:
         print("Target unreachable")
         return
 
-    #values = [8443, 21, 22, 53, 80, 443, 8000]
     open_ports = []
     closed_ports = []
-
-    if args.order == "random":
-        random.shuffle(port_list)
 
     if args.mode == "connect":
         with ThreadPoolExecutor(max_workers=len(port_list)) as exe:
             results = list(exe.map(connect_scan, itertools.repeat(host_ip), port_list))
+            end_time = time.time()
 
             for result in results:
                 if result != None:
                     open_ports.append(result)
 
-        print(open_ports)
         print()
+        print(open_ports)
     elif args.mode == "syn":
         with ThreadPoolExecutor(max_workers=len(port_list)) as exe:
             results = list(exe.map(syn_scan, itertools.repeat(host_ip), port_list))
+            end_time = time.time()
 
             for result in results:
                 if result != None:
                     open_ports.append(result)
                     
-        print(open_ports)
         print()
+        print(open_ports)
     else:
         with ThreadPoolExecutor(max_workers=len(port_list)) as exe:
             results = list(exe.map(udp_scan, itertools.repeat(host_ip), port_list))
+            end_time = time.time()
 
             for result in results:
                 if result != None:
                     closed_ports.append(result)
 
-        print(closed_ports)
         print()
+        print(closed_ports)
+
+    
+    # socket resolve server from port 
+    print(f"Starting port scan \t \t at {time.ctime(start_time)}")
+    print(f"Interesting ports on {host_ip}:")
+    print(f"Not shown: {len(closed_ports)} closed ports")
+    print(f"PORT \t STATE \t SERVICE")
+
+    
+    for port in open_ports:
+        print(port)
+
+    print(f"scan done! 1 IP adress (1 host up) scanned in {end_time - start_time} seconds")
+
 
 
 
